@@ -2,6 +2,8 @@
   --page-width: 210mm;
   --page-height: 297mm;
   --page-scale: 1;
+  --auto-scale: 1;
+  --effective-scale: 1;
   --stage-width: 210mm;
   --stage-height: 297mm;
   --canvas-bg: #eef2f7;
@@ -29,7 +31,7 @@
 html,
 body {
   margin: 0;
-  min-width: 1200px;
+  min-width: 0;
   font-family: var(--font-family);
   color: var(--text-main);
   background: linear-gradient(180deg, #f7f9fc 0%, var(--canvas-bg) 100%);
@@ -61,7 +63,7 @@ li + li {
 
 .page-shell {
   min-height: 100vh;
-  width: max(100%, calc(var(--stage-width) + 64px));
+  width: 100%;
   padding: 40px 32px 88px;
   display: flex;
   justify-content: center;
@@ -90,7 +92,8 @@ body::-webkit-scrollbar-thumb:hover {
 
 .resume-stage {
   width: var(--stage-width);
-  min-width: var(--stage-width);
+  max-width: 100%;
+  min-width: min(var(--stage-width), 100%);
   min-height: var(--stage-height);
   display: flex;
   justify-content: center;
@@ -101,11 +104,12 @@ body::-webkit-scrollbar-thumb:hover {
 .resume-page {
   width: var(--page-width);
   min-height: var(--page-height);
+  font-size: var(--fs-body);
   padding: var(--page-padding);
   background: var(--paper-bg);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-  transform: scale(var(--page-scale));
+  transform: scale(var(--effective-scale));
   transform-origin: top center;
 }
 
@@ -172,7 +176,15 @@ body::-webkit-scrollbar-thumb:hover {
 }
 
 .summary {
+  font-size: 1em;
+  line-height: var(--lh-body);
   color: var(--text-main);
+}
+
+.timeline-item li,
+.compact-section li {
+  font-size: 1em;
+  line-height: var(--lh-body);
 }
 
 .timeline-item + .timeline-item {
@@ -291,9 +303,133 @@ body::-webkit-scrollbar-thumb:hover {
   }
 }
 
+@media (max-width: 1024px) {
+  .page-shell {
+    padding: 28px 20px 88px;
+  }
+
+  .floating-toolbar {
+    right: 20px;
+    bottom: 20px;
+  }
+}
+
+@media (max-width: 767px) {
+  :root {
+    --fs-body: 10px;
+    --fs-meta: 8.5px;
+    --fs-h1: 20px;
+    --fs-h2: 11px;
+    --fs-h3: 10.5px;
+    --lh-body: 1.5;
+    --page-padding: 10px;
+    --radius: 12px;
+  }
+
+  .page-shell {
+    width: 100%;
+    padding: 10px 8px 18px;
+    display: block;
+  }
+
+  .resume-stage {
+    width: 100%;
+    min-width: 0;
+    min-height: auto;
+    display: block;
+  }
+
+  .resume-page {
+    width: 100%;
+    min-height: auto;
+    transform: none;
+    box-shadow: 0 14px 36px rgba(15, 23, 42, 0.12);
+  }
+
+  ul {
+    padding-left: 14px;
+  }
+
+  .resume-header {
+    gap: 10px;
+    padding-bottom: 12px;
+  }
+
+  .resume-header h1 {
+    margin-top: 6px;
+  }
+
+  .target-role {
+    margin-top: 6px;
+    font-size: 12px;
+  }
+
+  .identity-meta {
+    gap: 4px;
+  }
+
+  .resume-section {
+    margin-top: 12px;
+  }
+
+  .section-heading {
+    gap: 8px;
+    margin-bottom: 7px;
+  }
+
+  .section-heading::before {
+    width: 3px;
+    height: 12px;
+  }
+
+  .timeline-item + .timeline-item {
+    margin-top: 10px;
+  }
+
+  .timeline-item ul {
+    margin-top: 5px;
+  }
+
+  .item-head,
+  .simple-item {
+    gap: 10px;
+  }
+
+  .item-time,
+  .item-subtitle,
+  .simple-item p {
+    font-size: 8.5px;
+  }
+
+  .resume-grid {
+    gap: 10px;
+  }
+
+  .tag-list {
+    gap: 6px;
+  }
+
+  .tag-list li {
+    padding: 4px 8px;
+    font-size: 9.5px;
+  }
+
+  .summary,
+  .timeline-item li,
+  .compact-section ul:not(.tag-list) li {
+    font-size: 10px;
+  }
+
+  .floating-toolbar {
+    display: none;
+  }
+}
+
 @media print {
   :root {
     --page-scale: 1;
+    --auto-scale: 1;
+    --effective-scale: 1;
   }
 
   html,

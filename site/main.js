@@ -2,8 +2,11 @@ const MIN_SCALE = 1;
 const MAX_SCALE = 1.3;
 const STEP = 0.1;
 const DEFAULT_SCALE = 1;
+const MOBILE_BREAKPOINT = 767;
+const TABLET_BREAKPOINT = 1024;
 
 const root = document.documentElement;
+const shell = document.querySelector('.page-shell');
 const page = document.getElementById('resumePage');
 const toolbar = document.querySelector('.floating-toolbar');
 const buttons = {
@@ -18,13 +21,69 @@ function clampScale(value) {
   return Math.min(MAX_SCALE, Math.max(MIN_SCALE, Number(value.toFixed(2))));
 }
 
+function getLayoutMode() {
+  if (window.innerWidth <= MOBILE_BREAKPOINT) {
+    return 'mobile';
+  }
+
+  if (window.innerWidth <= TABLET_BREAKPOINT) {
+    return 'tablet';
+  }
+
+  return 'desktop';
+}
+
+function getShellContentWidth() {
+  if (!shell) {
+    return window.innerWidth;
+  }
+
+  const styles = window.getComputedStyle(shell);
+  const paddingLeft = Number.parseFloat(styles.paddingLeft) || 0;
+  const paddingRight = Number.parseFloat(styles.paddingRight) || 0;
+  return shell.clientWidth - paddingLeft - paddingRight;
+}
+
+function getAutoScale(layoutMode = getLayoutMode()) {
+  if (!page) {
+    return 1;
+  }
+
+  if (layoutMode === 'tablet') {
+    return Math.min(1, getShellContentWidth() / page.offsetWidth);
+  }
+
+  return 1;
+}
+
+function getEffectiveScale(layoutMode = getLayoutMode()) {
+  if (layoutMode === 'mobile') {
+    return 1;
+  }
+
+  return Number((currentScale * getAutoScale(layoutMode)).toFixed(4));
+}
+
 function updateStageSize() {
   if (!page) {
     return;
   }
 
-  const stageWidth = Math.ceil(page.offsetWidth * currentScale);
-  const stageHeight = Math.ceil(page.offsetHeight * currentScale);
+  const layoutMode = getLayoutMode();
+  const autoScale = getAutoScale(layoutMode);
+  const effectiveScale = getEffectiveScale(layoutMode);
+
+  root.style.setProperty('--auto-scale', autoScale.toString());
+  root.style.setProperty('--effective-scale', effectiveScale.toString());
+
+  if (layoutMode === 'mobile') {
+    root.style.setProperty('--stage-width', '100%');
+    root.style.setProperty('--stage-height', 'auto');
+    return;
+  }
+
+  const stageWidth = Math.ceil(page.offsetWidth * effectiveScale);
+  const stageHeight = Math.ceil(page.offsetHeight * effectiveScale);
 
   root.style.setProperty('--stage-width', `${stageWidth}px`);
   root.style.setProperty('--stage-height', `${stageHeight}px`);
@@ -56,8 +115,8 @@ function getViewportAnchor(scale) {
 }
 
 function updateScale(nextScale, preserveCenter = false) {
-  const previousScale = currentScale;
-  const anchor = preserveCenter ? getViewportAnchor(previousScale) : null;
+  const previousEffectiveScale = getEffectiveScale();
+  const anchor = preserveCenter ? getViewportAnchor(previousEffectiveScale) : null;
 
   currentScale = clampScale(nextScale);
   root.style.setProperty('--page-scale', currentScale.toString());
@@ -75,7 +134,8 @@ function updateScale(nextScale, preserveCenter = false) {
         return;
       }
 
-      const scaleRatio = currentScale / anchor.scale;
+      const nextEffectiveScale = getEffectiveScale();
+      const scaleRatio = nextEffectiveScale / anchor.scale;
       const targetScrollX = metrics.left + anchor.offsetX * scaleRatio - window.innerWidth / 2;
       const targetScrollY = metrics.top + anchor.offsetY * scaleRatio;
 
