@@ -9,11 +9,13 @@ const root = document.documentElement;
 const shell = document.querySelector('.page-shell');
 const page = document.getElementById('resumePage');
 const toolbar = document.querySelector('.floating-toolbar');
+const contactActions = document.querySelectorAll('.identity-action[data-copy]');
 const buttons = {
   zoomIn: document.querySelector('[data-action="zoom-in"]'),
   zoomOut: document.querySelector('[data-action="zoom-out"]'),
   reset: document.querySelector('[data-action="reset"]')
 };
+const copyFeedbackTimers = new WeakMap();
 
 let currentScale = DEFAULT_SCALE;
 
@@ -114,6 +116,17 @@ function getViewportAnchor(scale) {
   };
 }
 
+function updateToolbarState() {
+  if (!buttons.zoomIn || !buttons.zoomOut || !buttons.reset) {
+    return;
+  }
+
+  buttons.zoomIn.disabled = currentScale >= MAX_SCALE;
+  buttons.zoomOut.disabled = currentScale <= MIN_SCALE;
+  buttons.reset.disabled = currentScale === DEFAULT_SCALE;
+  buttons.reset.textContent = `${Math.round(currentScale * 100)}%`;
+}
+
 function updateScale(nextScale, preserveCenter = false) {
   const previousEffectiveScale = getEffectiveScale();
   const anchor = preserveCenter ? getViewportAnchor(previousEffectiveScale) : null;
@@ -121,11 +134,7 @@ function updateScale(nextScale, preserveCenter = false) {
   currentScale = clampScale(nextScale);
   root.style.setProperty('--page-scale', currentScale.toString());
   updateStageSize();
-
-  buttons.zoomIn.disabled = currentScale >= MAX_SCALE;
-  buttons.zoomOut.disabled = currentScale <= MIN_SCALE;
-  buttons.reset.disabled = currentScale === DEFAULT_SCALE;
-  buttons.reset.textContent = `${Math.round(currentScale * 100)}%`;
+  updateToolbarState();
 
   if (anchor) {
     requestAnimationFrame(() => {
@@ -167,6 +176,62 @@ function handleToolbarClick(event) {
   updateScale(DEFAULT_SCALE, true);
 }
 
+async function copyText(value) {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(value);
+    return;
+  }
+
+  const textarea = document.createElement('textarea');
+  textarea.value = value;
+  textarea.setAttribute('readonly', '');
+  textarea.style.position = 'absolute';
+  textarea.style.left = '-9999px';
+  document.body.appendChild(textarea);
+  textarea.select();
+  document.execCommand('copy');
+  textarea.remove();
+}
+
+function flashCopiedState(element) {
+  const originalLabel = element.dataset.label || element.textContent.trim();
+  if (!element.dataset.label) {
+    element.dataset.label = originalLabel;
+  }
+
+  const textNode = element.querySelector('span');
+  if (!textNode) {
+    return;
+  }
+
+  textNode.textContent = '已复制';
+  window.clearTimeout(copyFeedbackTimers.get(element));
+
+  const timer = window.setTimeout(() => {
+    textNode.textContent = originalLabel;
+  }, 1200);
+
+  copyFeedbackTimers.set(element, timer);
+}
+
+function bindContactActions() {
+  contactActions.forEach((element) => {
+    element.addEventListener('click', async () => {
+      const value = element.dataset.copy;
+      if (!value) {
+        return;
+      }
+
+      try {
+        await copyText(value);
+        flashCopiedState(element);
+      } catch (error) {
+        console.error('Copy failed:', error);
+      }
+    });
+  });
+}
+
 if (page) {
   window.addEventListener('resize', updateStageSize);
   window.addEventListener('load', updateStageSize);
@@ -175,4 +240,8 @@ if (page) {
 if (toolbar && page && buttons.zoomIn && buttons.zoomOut && buttons.reset) {
   toolbar.addEventListener('click', handleToolbarClick);
   updateScale(DEFAULT_SCALE);
+}
+
+if (contactActions.length > 0) {
+  bindContactActions();
 }

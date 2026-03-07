@@ -14,14 +14,20 @@
   --accent: #2563eb;
   --shadow: 0 24px 60px rgba(15, 23, 42, 0.14);
   --font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
-  --fs-body: 13px;
+  --fs-body: 12.5px;
   --fs-meta: 12px;
   --fs-h1: 30px;
   --fs-h2: 14px;
   --fs-h3: 14px;
-  --lh-body: 1.6;
-  --page-padding: 18mm;
+  --lh-body: 1.55;
+  --page-padding: 14mm;
   --radius: 20px;
+  --header-gap: 20px;
+  --meta-column-gap: 34px;
+  --avatar-width: 112px;
+  --avatar-height: 100px;
+  --avatar-offset-top: -4px;
+  --mobile-header-aside-width: 78px;
 }
 
 * {
@@ -59,6 +65,10 @@ ul {
 
 li + li {
   margin-top: 4px;
+}
+
+li {
+  word-break: normal;
 }
 
 .page-shell {
@@ -114,52 +124,95 @@ body::-webkit-scrollbar-thumb:hover {
 }
 
 .resume-header {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto var(--avatar-width);
   align-items: flex-start;
-  justify-content: space-between;
-  gap: 24px;
-  padding-bottom: 18px;
-  border-bottom: 1px solid var(--line-soft);
+  column-gap: var(--header-gap);
+  row-gap: 8px;
+  padding-bottom: 4px;
+  border-bottom: 0;
 }
 
-.eyebrow {
-  color: var(--accent);
-  font-size: var(--fs-meta);
-  font-weight: 700;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
+.resume-header > :first-child {
+  grid-column: 1 / 3;
 }
 
 .resume-header h1 {
-  margin-top: 8px;
+  margin-top: 0;
   font-size: var(--fs-h1);
   line-height: 1.15;
-}
-
-.target-role {
-  margin-top: 8px;
-  color: var(--text-soft);
-  font-size: 15px;
+  color: #000000;
 }
 
 .identity-meta {
   display: grid;
-  gap: 6px;
+  grid-template-columns: repeat(2, max-content);
+  column-gap: var(--meta-column-gap);
+  row-gap: 6px;
   font-size: var(--fs-meta);
-  text-align: right;
+  text-align: left;
   color: var(--text-soft);
   white-space: nowrap;
+  justify-content: start;
+}
+
+.identity-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.identity-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.identity-action:hover {
+  color: #1d4ed8;
+}
+
+.identity-action:focus-visible {
+  outline: 2px solid #93c5fd;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.identity-meta svg {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
+  fill: currentColor;
+}
+
+.resume-avatar {
+  grid-column: 3;
+  grid-row: 1 / span 2;
+  width: var(--avatar-width);
+  height: var(--avatar-height);
+  object-fit: cover;
+  object-position: center top;
+  border-radius: 4px;
+  align-self: start;
+  margin-top: var(--avatar-offset-top);
 }
 
 .resume-section {
-  margin-top: 18px;
+  margin-top: 12px;
 }
 
 .section-heading {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 .section-heading::before {
@@ -187,6 +240,14 @@ body::-webkit-scrollbar-thumb:hover {
   line-height: var(--lh-body);
 }
 
+.timeline-item {
+  max-width: 100%;
+}
+
+.timeline-item h3 {
+  letter-spacing: -0.01em;
+}
+
 .timeline-item + .timeline-item {
   margin-top: 14px;
 }
@@ -206,24 +267,18 @@ body::-webkit-scrollbar-thumb:hover {
 }
 
 .item-subtitle,
-.simple-item p,
 .item-time {
   font-size: var(--fs-meta);
   color: var(--text-soft);
 }
 
-.timeline-item ul {
+.item-subtitle.tag-list {
   margin-top: 8px;
+  margin-bottom: 6px;
 }
 
-.resume-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-}
-
-.compact-section {
-  min-height: 100%;
+.timeline-item ul {
+  margin-top: 6px;
 }
 
 .tag-list {
@@ -231,17 +286,18 @@ body::-webkit-scrollbar-thumb:hover {
   padding: 0;
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
 }
 
 .tag-list li {
   margin: 0;
-  padding: 5px 10px;
+  padding: 4px 8px;
   border: 1px solid #d7e3ff;
   border-radius: 999px;
   color: #1849b8;
   background: #f3f7ff;
-  font-size: 12px;
+  font-size: 11px;
+  line-height: 1.35;
 }
 
 .floating-toolbar {
@@ -304,6 +360,14 @@ body::-webkit-scrollbar-thumb:hover {
 }
 
 @media (max-width: 1024px) {
+  :root {
+    --fs-h1: 24px;
+    --header-gap: 18px;
+    --meta-column-gap: 20px;
+    --avatar-width: 96px;
+    --avatar-height: 120px;
+  }
+
   .page-shell {
     padding: 28px 20px 88px;
   }
@@ -318,12 +382,16 @@ body::-webkit-scrollbar-thumb:hover {
   :root {
     --fs-body: 10px;
     --fs-meta: 8.5px;
-    --fs-h1: 20px;
+    --fs-h1: 16px;
     --fs-h2: 11px;
     --fs-h3: 10.5px;
     --lh-body: 1.5;
     --page-padding: 10px;
     --radius: 12px;
+    --meta-column-gap: 10px;
+    --avatar-width: 60px;
+    --avatar-height: 74px;
+    --avatar-offset-top: 0;
   }
 
   .page-shell {
@@ -351,20 +419,45 @@ body::-webkit-scrollbar-thumb:hover {
   }
 
   .resume-header {
-    gap: 10px;
-    padding-bottom: 12px;
+    position: relative;
+    display: block;
+    padding-right: var(--mobile-header-aside-width);
+    padding-bottom: 4px;
+    border-bottom: 0;
+  }
+
+  .resume-header > :first-child {
+    grid-column: auto;
   }
 
   .resume-header h1 {
-    margin-top: 6px;
+    margin-top: 0;
+    line-height: 1.15;
   }
 
-  .target-role {
-    margin-top: 6px;
-    font-size: 12px;
+  .resume-avatar {
+    display: block;
+    position: absolute;
+    top: 0;
+    right: 0;
+    margin-top: 0;
   }
 
   .identity-meta {
+    grid-template-columns: repeat(2, max-content);
+    row-gap: 4px;
+    justify-content: start;
+    max-width: calc(100% - var(--mobile-header-aside-width));
+    margin-top: 6px;
+  }
+
+  .identity-meta svg {
+    width: 10px;
+    height: 10px;
+    flex-basis: 10px;
+  }
+
+  .identity-action {
     gap: 4px;
   }
 
@@ -390,33 +483,33 @@ body::-webkit-scrollbar-thumb:hover {
     margin-top: 5px;
   }
 
-  .item-head,
-  .simple-item {
+  .item-head {
     gap: 10px;
   }
 
   .item-time,
-  .item-subtitle,
-  .simple-item p {
+  .item-subtitle {
     font-size: 8.5px;
   }
 
-  .resume-grid {
-    gap: 10px;
+  .tag-list {
+    gap: 4px;
   }
 
-  .tag-list {
-    gap: 6px;
+  .item-subtitle.tag-list {
+    margin-top: 4px;
+    margin-bottom: 4px;
   }
 
   .tag-list li {
-    padding: 4px 8px;
-    font-size: 9.5px;
+    padding: 2px 6px;
+    font-size: 8px;
+    line-height: 1.25;
   }
 
   .summary,
   .timeline-item li,
-  .compact-section ul:not(.tag-list) li {
+  .resume-section ul:not(.tag-list) li {
     font-size: 10px;
   }
 
