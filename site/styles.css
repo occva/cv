@@ -25,7 +25,7 @@
   --header-gap: 20px;
   --meta-column-gap: 34px;
   --avatar-width: 112px;
-  --avatar-height: 100px;
+  --avatar-height: 112px;
   --avatar-offset-top: -4px;
   --mobile-header-aside-width: 78px;
 }
@@ -365,7 +365,7 @@ body::-webkit-scrollbar-thumb:hover {
     --header-gap: 18px;
     --meta-column-gap: 20px;
     --avatar-width: 96px;
-    --avatar-height: 120px;
+    --avatar-height: 96px;
   }
 
   .page-shell {
@@ -390,7 +390,7 @@ body::-webkit-scrollbar-thumb:hover {
     --radius: 12px;
     --meta-column-gap: 10px;
     --avatar-width: 60px;
-    --avatar-height: 74px;
+    --avatar-height: 60px;
     --avatar-offset-top: 0;
   }
 
