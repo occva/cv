@@ -197,11 +197,19 @@ body::-webkit-scrollbar-thumb:hover {
   grid-row: 1 / span 2;
   width: var(--avatar-width);
   height: var(--avatar-height);
-  object-fit: cover;
-  object-position: center top;
   border-radius: 4px;
   align-self: start;
   margin-top: var(--avatar-offset-top);
+  background-image: var(--avatar-image);
+  background-position: center top;
+  background-repeat: no-repeat;
+  background-size: cover;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -webkit-user-drag: none;
 }
 
 .resume-section {
