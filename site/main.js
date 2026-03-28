@@ -12,15 +12,26 @@ const resumeDocument = document.getElementById('resumeDocument');
 const resumeSource = document.getElementById('resumeSource');
 const resumePages = document.getElementById('resumePages');
 const toolbar = document.querySelector('.floating-toolbar');
+const resumeMenuTrigger = document.getElementById('resumeMenuTrigger');
+const resumeMenuPanel = document.getElementById('resumeMenuPanel');
+const blankResumeTemplate = document.getElementById('resumeTemplateBlank');
 const buttons = {
   zoomIn: document.querySelector('[data-action="zoom-in"]'),
   zoomOut: document.querySelector('[data-action="zoom-out"]'),
   reset: document.querySelector('[data-action="reset"]')
 };
 const copyFeedbackTimers = new WeakMap();
+const defaultResumeMarkup = resumeSource ? resumeSource.innerHTML : '';
+const defaultTitle = document.title;
+const resumeVariants = [
+  { title: defaultTitle, markup: defaultResumeMarkup },
+  { title: 'AI_Dev 简历', markup: blankResumeTemplate ? blankResumeTemplate.innerHTML : defaultResumeMarkup }
+];
 
 let currentScale = DEFAULT_SCALE;
 let currentLayoutMode = 'desktop';
+let currentResumeIndex = 0;
+let isResumeMenuPinned = false;
 
 function clampScale(value) {
   return Math.min(MAX_SCALE, Math.max(MIN_SCALE, Number(value.toFixed(2))));
@@ -330,6 +341,127 @@ function handleViewportChange() {
   updateStageSize();
 }
 
+function updateMenuState() {
+  if (!resumeMenuPanel) {
+    return;
+  }
+
+  resumeMenuPanel.querySelectorAll('[data-resume-index]').forEach((item) => {
+    const index = Number(item.dataset.resumeIndex);
+    item.classList.toggle('is-active', index === currentResumeIndex);
+  });
+}
+
+function openResumeMenu() {
+  if (!resumeMenuPanel || !resumeMenuTrigger) {
+    return;
+  }
+
+  resumeMenuPanel.hidden = false;
+  resumeMenuTrigger.setAttribute('aria-expanded', 'true');
+}
+
+function closeResumeMenu() {
+  if (!resumeMenuPanel || !resumeMenuTrigger) {
+    return;
+  }
+
+  resumeMenuPanel.hidden = true;
+  resumeMenuTrigger.setAttribute('aria-expanded', 'false');
+}
+
+function pinResumeMenu() {
+  isResumeMenuPinned = true;
+  openResumeMenu();
+}
+
+function unpinResumeMenu() {
+  isResumeMenuPinned = false;
+  closeResumeMenu();
+}
+
+function switchResume(index) {
+  const variant = resumeVariants[index];
+  if (!variant || !resumeSource || !resumeDocument) {
+    return;
+  }
+
+  currentResumeIndex = index;
+  document.title = variant.title;
+  resumeDocument.dataset.jsReady = 'false';
+  resumeSource.innerHTML = variant.markup;
+  updateMenuState();
+  handleViewportChange();
+}
+
+function bindResumeMenu() {
+  if (!resumeMenuTrigger || !resumeMenuPanel) {
+    return;
+  }
+
+  const menuRoot = resumeMenuTrigger.closest('.resume-menu');
+  if (!menuRoot) {
+    return;
+  }
+
+  menuRoot.addEventListener('mouseenter', openResumeMenu);
+  menuRoot.addEventListener('mouseleave', () => {
+    if (!isResumeMenuPinned) {
+      closeResumeMenu();
+    }
+  });
+
+  menuRoot.addEventListener('focusin', openResumeMenu);
+  menuRoot.addEventListener('focusout', (event) => {
+    const nextFocused = event.relatedTarget;
+    if ((!nextFocused || !menuRoot.contains(nextFocused)) && !isResumeMenuPinned) {
+      closeResumeMenu();
+    }
+  });
+
+  resumeMenuTrigger.addEventListener('click', (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (isResumeMenuPinned) {
+      unpinResumeMenu();
+      return;
+    }
+
+    pinResumeMenu();
+  });
+
+  resumeMenuPanel.addEventListener('click', (event) => {
+    const target = event.target.closest('[data-resume-index]');
+    if (!target) {
+      return;
+    }
+
+    const nextIndex = Number(target.dataset.resumeIndex);
+    if (Number.isNaN(nextIndex)) {
+      return;
+    }
+
+    switchResume(nextIndex);
+  });
+
+  document.addEventListener('click', (event) => {
+    if (!isResumeMenuPinned) {
+      return;
+    }
+
+    if (!menuRoot.contains(event.target)) {
+      unpinResumeMenu();
+    }
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      unpinResumeMenu();
+    }
+  });
+}
+
 async function copyText(value) {
   if (navigator.clipboard?.writeText) {
     await navigator.clipboard.writeText(value);
@@ -392,6 +524,8 @@ function bindCopyActions() {
 }
 
 if (resumeDocument) {
+  updateMenuState();
+  bindResumeMenu();
   handleViewportChange();
   window.addEventListener('resize', handleViewportChange);
   window.addEventListener('load', handleViewportChange);
