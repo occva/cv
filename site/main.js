@@ -25,13 +25,44 @@ const defaultResumeMarkup = resumeSource ? resumeSource.innerHTML : '';
 const defaultTitle = document.title;
 const resumeVariants = [
   { title: defaultTitle, markup: defaultResumeMarkup },
-  { title: 'AI_Dev 简历', markup: blankResumeTemplate ? blankResumeTemplate.innerHTML : defaultResumeMarkup }
+  { title: '刘洪刚 - AI 应用开发工程师', markup: blankResumeTemplate ? blankResumeTemplate.innerHTML : defaultResumeMarkup }
 ];
 
 let currentScale = DEFAULT_SCALE;
 let currentLayoutMode = 'desktop';
 let currentResumeIndex = 0;
 let isResumeMenuPinned = false;
+
+// ===== Resume Switch Persistence =====
+const RESUME_INDEX_STORAGE_KEY = 'cv:last-resume-index';
+
+const resumeSwitchPersistence = {
+  loadIndex() {
+    try {
+      const raw = window.localStorage.getItem(RESUME_INDEX_STORAGE_KEY);
+      if (raw === null) {
+        return 0;
+      }
+
+      const parsed = Number.parseInt(raw, 10);
+      if (Number.isNaN(parsed) || parsed < 0 || parsed >= resumeVariants.length) {
+        return 0;
+      }
+
+      return parsed;
+    } catch (error) {
+      return 0;
+    }
+  },
+  saveIndex(index) {
+    try {
+      window.localStorage.setItem(RESUME_INDEX_STORAGE_KEY, String(index));
+    } catch (error) {
+      // Ignore persistence errors (e.g. private mode quota limits).
+    }
+  }
+};
+
 
 function clampScale(value) {
   return Math.min(MAX_SCALE, Math.max(MIN_SCALE, Number(value.toFixed(2))));
@@ -341,6 +372,15 @@ function handleViewportChange() {
   updateStageSize();
 }
 
+function refreshLayoutAfterResumeSwitch() {
+  handleViewportChange();
+
+  // Re-run layout on next frame to avoid stale height measurements after markup swap.
+  requestAnimationFrame(() => {
+    handleViewportChange();
+  });
+}
+
 function updateMenuState() {
   if (!resumeMenuPanel) {
     return;
@@ -387,11 +427,12 @@ function switchResume(index) {
   }
 
   currentResumeIndex = index;
+  resumeSwitchPersistence.saveIndex(currentResumeIndex);
   document.title = variant.title;
   resumeDocument.dataset.jsReady = 'false';
   resumeSource.innerHTML = variant.markup;
   updateMenuState();
-  handleViewportChange();
+  refreshLayoutAfterResumeSwitch();
 }
 
 function bindResumeMenu() {
@@ -524,9 +565,16 @@ function bindCopyActions() {
 }
 
 if (resumeDocument) {
+  currentResumeIndex = resumeSwitchPersistence.loadIndex();
   updateMenuState();
   bindResumeMenu();
-  handleViewportChange();
+
+  if (currentResumeIndex === 0) {
+    handleViewportChange();
+  } else {
+    switchResume(currentResumeIndex);
+  }
+
   window.addEventListener('resize', handleViewportChange);
   window.addEventListener('load', handleViewportChange);
 }

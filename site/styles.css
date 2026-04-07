@@ -644,6 +644,12 @@ html.js .resume-document[data-js-ready="false"] {
   }
 }
 
+@media (max-width: 1199px) {
+  .resume-menu {
+    display: none;
+  }
+}
+
 @media (max-width: 767px) {
   :root {
     --fs-body: 10px;
@@ -686,6 +692,10 @@ html.js .resume-document[data-js-ready="false"] {
   .resume-document {
     width: 100%;
     transform: none;
+  }
+
+  .resume-menu {
+    display: none;
   }
 
   .resume-menu-trigger {
