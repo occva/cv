@@ -32,6 +32,14 @@
                 <span>AI 项目版</span>
               </span>
             </button>
+            <div class="resume-menu-divider" role="presentation"></div>
+            <button type="button" class="resume-menu-item resume-menu-item--export" id="resumeExportButton" aria-label="导出当前简历为 PDF">
+              <span class="resume-menu-thumb resume-menu-thumb--export" aria-hidden="true"></span>
+              <span class="resume-menu-text">
+                <strong>导出 PDF</strong>
+                <span>保持当前版式并直接下载</span>
+              </span>
+            </button>
           </div>
         </div>
         <div class="resume-source" id="resumeSource">
@@ -203,7 +211,7 @@
   <template id="resumeTemplateBlank">
     <header class="resume-header">
       <div>
-        <h1>刘洪刚 · AI 应用工程师</h1>
+        <h1>刘洪刚 - AI 应用工程师</h1>
       </div>
       <div class="identity-meta" aria-label="个人信息">
         <span><svg viewBox="0 0 1024 1024" aria-hidden="true"><path d="M718.421333 593.664c81.28 31.146667 134.912 88.661333 134.912 175.658667v90.581333c0 43.52-35.285333 78.762667-78.762666 78.762667H249.429333A78.762667 78.762667 0 0 1 170.666667 859.904V769.28c0-87.04 53.632-144.512 134.912-175.658667a37.077333 37.077333 0 0 1 39.850666 8.746667c4.906667 5.034667 9.130667 9.088 12.714667 12.16A235.392 235.392 0 0 0 512 671.488a235.434667 235.434667 0 0 0 157.781333-60.373333c2.56-2.304 5.546667-5.205333 8.96-8.704a36.906667 36.906667 0 0 1 39.68-8.746667zM512 128a196.906667 196.906667 0 0 1 196.906667 196.906667V415.573333a196.906667 196.906667 0 0 1-393.813334 0V324.906667A196.906667 196.906667 0 0 1 512 128z"></path></svg>男 / 22岁</span>
@@ -329,6 +337,8 @@
     <button type="button" class="tool-button reset-button" data-action="reset" aria-label="重置简历缩放">100%</button>
   </aside>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <script src="./main.js"></script>
 </body>
 </html>

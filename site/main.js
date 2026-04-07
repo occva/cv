@@ -5,6 +5,14 @@ const DEFAULT_SCALE = 1;
 const MOBILE_BREAKPOINT = 767;
 const TABLET_BREAKPOINT = 1024;
 const PAGINATION_OVERFLOW_TOLERANCE = 72;
+const PDF_PAGE_WIDTH_MM = 210;
+const PDF_PAGE_HEIGHT_MM = 297;
+const PDF_RENDER_SCALE = 3;
+const PDF_PAGE_IMAGE_FORMAT = 'JPEG';
+const PDF_PAGE_IMAGE_QUALITY = 0.98;
+const PDF_PAGE_IMAGE_COMPRESSION = 'MEDIUM';
+const PDF_AVATAR_IMAGE_FORMAT = 'JPEG';
+const PDF_AVATAR_IMAGE_COMPRESSION = 'NONE';
 
 const root = document.documentElement;
 const shell = document.querySelector('.page-shell');
@@ -14,6 +22,7 @@ const resumePages = document.getElementById('resumePages');
 const toolbar = document.querySelector('.floating-toolbar');
 const resumeMenuTrigger = document.getElementById('resumeMenuTrigger');
 const resumeMenuPanel = document.getElementById('resumeMenuPanel');
+const resumeExportButton = document.getElementById('resumeExportButton');
 const blankResumeTemplate = document.getElementById('resumeTemplateBlank');
 const buttons = {
   zoomIn: document.querySelector('[data-action="zoom-in"]'),
@@ -25,13 +34,14 @@ const defaultResumeMarkup = resumeSource ? resumeSource.innerHTML : '';
 const defaultTitle = document.title;
 const resumeVariants = [
   { title: defaultTitle, markup: defaultResumeMarkup },
-  { title: '刘洪刚 - AI 应用开发工程师', markup: blankResumeTemplate ? blankResumeTemplate.innerHTML : defaultResumeMarkup }
+  { title: '刘洪刚 - AI 应用工程师', markup: blankResumeTemplate ? blankResumeTemplate.innerHTML : defaultResumeMarkup }
 ];
 
 let currentScale = DEFAULT_SCALE;
 let currentLayoutMode = 'desktop';
 let currentResumeIndex = 0;
 let isResumeMenuPinned = false;
+let isExportingPdf = false;
 
 // ===== Resume Switch Persistence =====
 const RESUME_INDEX_STORAGE_KEY = 'cv:last-resume-index';
@@ -62,6 +72,223 @@ const resumeSwitchPersistence = {
     }
   }
 };
+
+function waitForPaint(frames = 2) {
+  return new Promise((resolve) => {
+    const step = () => {
+      if (frames <= 0) {
+        resolve();
+        return;
+      }
+
+      frames -= 1;
+      window.requestAnimationFrame(step);
+    };
+
+    window.requestAnimationFrame(step);
+  });
+}
+
+function setExportButtonBusy(isBusy) {
+  if (!resumeExportButton) {
+    return;
+  }
+
+  resumeExportButton.disabled = isBusy;
+  resumeExportButton.setAttribute('aria-busy', String(isBusy));
+}
+
+function getResumeHeadingText() {
+  const heading = resumeSource?.querySelector('.resume-header h1')?.textContent?.trim();
+  return heading || document.title || 'resume';
+}
+
+async function getExportPageNodes() {
+  if (!resumePages) {
+    return [];
+  }
+
+  handleViewportChange();
+
+  if (document.fonts?.ready) {
+    try {
+      await document.fonts.ready;
+    } catch (error) {
+      // Ignore font readiness failures and continue with export.
+    }
+  }
+
+  await waitForPaint(2);
+  return Array.from(resumePages.children).filter((node) => node.classList?.contains('resume-page'));
+}
+
+function createPdfFileName() {
+  const safeBaseName = getResumeHeadingText()
+    .replace(/[\\/:*?"<>|]/g, '')
+    .replace(/\s+/g, '');
+
+  return `${safeBaseName || 'resume'}.pdf`;
+}
+
+function createPdfExportRoot(pageNodes) {
+  const exportRoot = document.createElement('div');
+  exportRoot.className = 'pdf-export-root';
+  exportRoot.setAttribute('aria-hidden', 'true');
+  const exportPages = pageNodes.map((pageNode) => {
+    const clone = pageNode.cloneNode(true);
+    exportRoot.append(clone);
+    return clone;
+  });
+  document.body.append(exportRoot);
+
+  return {
+    exportRoot,
+    exportPages
+  };
+}
+
+function extractUrlFromCssValue(value) {
+  if (!value || value === 'none') {
+    return '';
+  }
+
+  const match = value.match(/url\((['"]?)(.*?)\1\)/i);
+  return match?.[2] || '';
+}
+
+async function readImageAsDataUrl(url) {
+  const response = await window.fetch(url, { mode: 'cors', credentials: 'omit' });
+  if (!response.ok) {
+    throw new Error(`Failed to fetch image: ${response.status}`);
+  }
+
+  const blob = await response.blob();
+  const dataUrl = await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(reader.error || new Error('Failed to read image blob.'));
+    reader.readAsDataURL(blob);
+  });
+
+  return dataUrl;
+}
+
+async function getAvatarOverlayData(pageNode) {
+  const avatarNode = pageNode.querySelector('.resume-avatar');
+  if (!avatarNode) {
+    return null;
+  }
+
+  const pageRect = pageNode.getBoundingClientRect();
+  const avatarRect = avatarNode.getBoundingClientRect();
+  if (!pageRect.width || !pageRect.height || !avatarRect.width || !avatarRect.height) {
+    return null;
+  }
+
+  const avatarUrl = extractUrlFromCssValue(window.getComputedStyle(avatarNode).backgroundImage);
+  if (!avatarUrl) {
+    return null;
+  }
+
+  const x = ((avatarRect.left - pageRect.left) / pageRect.width) * PDF_PAGE_WIDTH_MM;
+  const y = ((avatarRect.top - pageRect.top) / pageRect.height) * PDF_PAGE_HEIGHT_MM;
+  const width = (avatarRect.width / pageRect.width) * PDF_PAGE_WIDTH_MM;
+  const height = (avatarRect.height / pageRect.height) * PDF_PAGE_HEIGHT_MM;
+
+  try {
+    const dataUrl = await readImageAsDataUrl(avatarUrl);
+    avatarNode.style.backgroundImage = 'none';
+
+    return {
+      dataUrl,
+      x,
+      y,
+      width,
+      height
+    };
+  } catch (error) {
+    console.warn('Avatar overlay fallback:', error);
+    return null;
+  }
+}
+
+async function renderExportPageToCanvas(pageNode) {
+  return window.html2canvas(pageNode, {
+    allowTaint: false,
+    backgroundColor: '#ffffff',
+    imageTimeout: 0,
+    logging: false,
+    scale: PDF_RENDER_SCALE,
+    scrollX: 0,
+    scrollY: 0,
+    useCORS: true,
+    width: pageNode.scrollWidth,
+    height: pageNode.scrollHeight,
+    windowWidth: pageNode.scrollWidth,
+    windowHeight: pageNode.scrollHeight
+  });
+}
+
+async function exportCurrentResumeAsPdf() {
+  const jsPDF = window.jspdf?.jsPDF;
+
+  if (typeof window.html2canvas !== 'function' || typeof jsPDF !== 'function') {
+    throw new Error('PDF export libraries are not available.');
+  }
+
+  const livePages = await getExportPageNodes();
+
+  if (!livePages.length) {
+    throw new Error('No paginated resume pages available for export.');
+  }
+
+  const { exportRoot, exportPages } = createPdfExportRoot(livePages);
+
+  try {
+    const pdf = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4',
+      compress: true
+    });
+
+    for (const [index, pageNode] of exportPages.entries()) {
+      if (index > 0) {
+        pdf.addPage();
+      }
+
+      const avatarOverlay = await getAvatarOverlayData(pageNode);
+      const canvas = await renderExportPageToCanvas(pageNode);
+      pdf.addImage(
+        canvas.toDataURL('image/jpeg', PDF_PAGE_IMAGE_QUALITY),
+        PDF_PAGE_IMAGE_FORMAT,
+        0,
+        0,
+        PDF_PAGE_WIDTH_MM,
+        PDF_PAGE_HEIGHT_MM,
+        undefined,
+        PDF_PAGE_IMAGE_COMPRESSION
+      );
+
+      if (avatarOverlay?.dataUrl) {
+        pdf.addImage(
+          avatarOverlay.dataUrl,
+          PDF_AVATAR_IMAGE_FORMAT,
+          avatarOverlay.x,
+          avatarOverlay.y,
+          avatarOverlay.width,
+          avatarOverlay.height,
+          undefined,
+          PDF_AVATAR_IMAGE_COMPRESSION
+        );
+      }
+    }
+
+    await Promise.resolve(pdf.save(createPdfFileName()));
+  } finally {
+    exportRoot.remove();
+  }
+}
 
 
 function clampScale(value) {
@@ -503,6 +730,49 @@ function bindResumeMenu() {
   });
 }
 
+function syncExportButtonState() {
+  if (!resumeExportButton) {
+    return;
+  }
+
+  if (typeof window.html2canvas !== 'function' || typeof window.jspdf?.jsPDF !== 'function') {
+    resumeExportButton.disabled = true;
+    resumeExportButton.setAttribute('aria-disabled', 'true');
+    return;
+  }
+
+  resumeExportButton.disabled = false;
+  resumeExportButton.removeAttribute('aria-disabled');
+}
+
+function bindExportAction() {
+  if (!resumeExportButton) {
+    return;
+  }
+
+  syncExportButtonState();
+
+  resumeExportButton.addEventListener('click', async () => {
+    if (isExportingPdf || resumeExportButton.disabled) {
+      return;
+    }
+
+    isExportingPdf = true;
+    unpinResumeMenu();
+    setExportButtonBusy(true);
+
+    try {
+      await exportCurrentResumeAsPdf();
+    } catch (error) {
+      console.error('PDF export failed:', error);
+      window.alert('PDF 导出失败，请刷新页面后重试。');
+    } finally {
+      isExportingPdf = false;
+      setExportButtonBusy(false);
+    }
+  });
+}
+
 async function copyText(value) {
   if (navigator.clipboard?.writeText) {
     await navigator.clipboard.writeText(value);
@@ -568,6 +838,7 @@ if (resumeDocument) {
   currentResumeIndex = resumeSwitchPersistence.loadIndex();
   updateMenuState();
   bindResumeMenu();
+  bindExportAction();
 
   if (currentResumeIndex === 0) {
     handleViewportChange();
