@@ -571,6 +571,10 @@ html.js .resume-document[data-js-ready="false"] {
   margin-top: var(--space-list-top);
 }
 
+.project-work-heading {
+  margin-top: 6px;
+}
+
 .tag-list {
   list-style: none;
   padding: 0;
