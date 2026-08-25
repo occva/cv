@@ -115,7 +115,7 @@
                 <li><strong>MQ：</strong>熟悉 <strong>RabbitMQ</strong> 的使用场景，熟悉<strong>消息可靠性</strong>、<strong>幂等性</strong>、消息积压解决方案，掌握<strong>死信队列</strong>、<strong>延迟队列</strong>等特性</li>
                 <li><strong>框架：</strong>熟悉 <strong>Spring</strong>、<strong>Spring MVC</strong>、<strong>Spring Boot</strong>、<strong>MyBatis</strong> 等核心框架，了解自动装配原理，<strong>IOC</strong> 底层实现机制</li>
                 <li><strong>工具：</strong>熟练使用开发工具 <strong>IDEA</strong>，项目管理工具 <strong>Maven</strong>，版本控制 <strong>Git</strong>，容器管理 <strong>Docker</strong>，接口测试工具 <strong>Knife4j</strong></li>
-                <li><strong>AI 技术：</strong>熟悉 <strong>RAG</strong>、<strong>Embedding 向量检索</strong>、<strong>Function Calling / Tool Calling</strong>、<strong>MCP</strong> 等常用方案，能够基于 <strong>OpenAI / Claude API</strong> 搭建智能问答、知识库检索和工具调用场景</li>
+                <li><strong>AI 技术：</strong>熟悉 <strong>RAG</strong>、<strong>Embedding 向量检索</strong>、<strong>Function Calling / Tool Calling</strong>、 <strong>Skill</strong>、<strong>MCP</strong> 等常用方案，能够基于 <strong>OpenAI / Claude API</strong> 搭建智能问答、知识库检索和工具调用场景</li>
               </ul>
             </article>
           </section>
@@ -135,20 +135,19 @@
                     <li>MyBatis</li>
                     <li>MySQL</li>
                     <li>Redis</li>
-                    <li>Quartz</li>
                     <li>Vue3</li>
                     <li>Element Plus</li>
                     <li>Knife4j</li>
                   </ul>
                 </div>
               </div>
-              <p class="summary"><strong>项目描述：</strong>基于 RuoYi-Vue 二次开发的前后端分离社团管理系统，覆盖用户端与管理端双端能力，支持社团展示、创建申请、入社审核、成员管理、活动报名签到、公告发布、荣誉展示与 AI 助手等核心场景。</p>
+              <p class="summary"><strong>项目描述：</strong>基于 RuoYi-Vue 二次开发的前后端分离社团管理系统，覆盖用户端与管理端双端能力，围绕入社审核、成员管理、活动报名与 <strong>AI 知识助手</strong>打造社团运营全流程。</p>
               <ul>
-                <li>基于 <strong>Spring Boot 3 + Spring Security 6 + MyBatis + Vue3 + Element Plus</strong> 搭建管理端 <strong>/system/*、/club/*</strong> 与用户端 <strong>/api/app/*、/api/user/*</strong> 两套接口体系，串联社团、分类、成员、活动、公告、荣誉等完整业务模块。</li>
-                <li>设计 <strong>角色 + 权限码 + 动态路由</strong> 的权限模型，前端通过动态菜单和 <strong>v-hasPermi / v-hasRole</strong> 控制页面与按钮可见性，后端使用 <strong>@PreAuthorize + JWT + Redis</strong> 完成管理员、社长、副社长、普通用户的多角色鉴权。</li>
-                <li>围绕 <strong>club、club_member、club_application、club_activity_registration</strong> 等核心表梳理业务关系，落地入社申请审核、新社团申请、成员任命/转让、活动报名/签到等流程，并补充菜单、字典和权限脚本，降低后续功能扩展成本。</li>
-                <li>实现 <strong>社团级数据隔离</strong>，对社长/副社长在管理端查询中按所属 <strong>club_id</strong> 自动限制数据范围，避免横向越权；同时支持热门社团、收藏、退出社团、我的社团等用户端高频场景。</li>
-                <li>接入 <strong>Knife4j</strong> 维护接口文档，结合 <strong>Quartz</strong> 和统计页面支撑成员/申请运营分析，并扩展 <strong>AI 助手</strong> 模块，支持普通问答、SSE 流式问答和会话历史能力。</li>
+                <li>基于 <strong>Spring Boot 3 + MyBatis + Vue3 + Element Plus</strong> 搭建管理端与用户端接口体系，设计 <strong>角色 + 权限码 + 动态路由</strong> 模型，结合 <strong>@PreAuthorize + JWT + Redis</strong> 实现管理员、社长、副社长、普通用户的多角色鉴权与按钮级控制。</li>
+                <li>基于 <strong>Redis ZSet</strong> 按浏览、收藏行为实时累加社团热度分并缓存排行，结合<strong>定时任务</strong>同步持久化到 MySQL 防止数据丢失，支撑热门社团推荐，同时实现收藏、退出社团、我的社团等用户端高频场景。</li>
+                <li>基于社团制度文档、公告与活动规则构建向量知识库，接入 <strong>Embedding + 向量检索</strong> 实现 <strong>RAG</strong> 问答，社员可通过自然语言咨询入社流程、活动规则等常见问题，替代人工答疑。</li>
+                <li>设计 <strong>Function Calling</strong> 工具集，让 AI 助手按用户意图路由到“我的社团”“我的活动报名状态”等系统接口并遵循原有权限校验，避免越权访问，结合 <strong>SSE</strong> 实现流式输出与多轮会话历史。</li>
+                <li>将社团查询、活动报名等核心能力封装为标准化 <strong>MCP Server</strong>，供 <strong>Claude、Cursor</strong> 等外部 AI 客户端通过统一协议调用，实现系统能力对外复用。</li>
               </ul>
             </article>
             <article class="timeline-item">
